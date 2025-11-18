@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="position: absolute;">
+<div class="container">
+
+    <div class="content">
+        <div class="search-section">
+
+            <form class="search-form" method="POST" action="/buscar_cliente">
+                <input type="text" name="codigo_cliente" class="search-input"
+                       placeholder="Ingrese Código Cliente (ej. CLI001)"
+                       value="{{ request.form.get('codigo_cliente', '') }}" required>
+                <button type="submit" class="btn btn-primary">Buscar Cliente</button>
+            </form>
+
+            {% if clientes_ejemplo %}
+            <div style="margin-top: 20px; font-size: 0.9em; color: #6c757d;">
+                <strong>Clientes de ejemplo:</strong> CLI001, CLI002, CLI003
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Buscando clientes...</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-error">
+            <span class="closebtn">&times;</span>
+            <strong>Error:</strong> {{ error }}
+        </div>
+        {% endif %}
+
+        {% if success %}
+        <div class="alert alert-success">
+            <span class="closebtn">&times;</span>
+            <strong>Éxito:</strong> {{ success }}
+        </div>
+        {% endif %}
+
+        {% if codigo %}
+        <div class="pedido-info">
+            <h5><center>Pedido No.: {{ codigo.codigo }}</center></h5>
+
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>Cliente:</th>
+                        <th>{{ codigo.cliente }}</th>
+                        <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;</th>
+                        <th>Teléfono:</th>
+                        <th>{{ codigo.telefono }}</th>
+                    </tr>
+                    <tr>
+                        <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;</th>
+                        <th>Fecha:</th>
+                        <th>{{ codigo.fecha }}</th>
+                    </tr>
+                    <tr>
+                        <th>Dirección:</th>
+                        <th>{{ codigo.direccion }}</th>
+                        <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+                        <th>Ciudad:</th>
+                        <th>{{ codigo.ciudad }}</th>
+                    </tr>
+                </thead>
+            </table>
+            <div class="info-label">Total de Artículos</div>
+            <div class="info-value">{{ codigo.articulos | length }}</div>
+        </div>
+
+        <div class="form-section">
+            <form method="POST" action="/grabar_pedido" id="pedidoForm">
+                <input type="hidden" name="numero_pedido" value="{{ codigo.codigo }}">
+                <table class="articulos-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Artículo</th>
+                            <th>Cantidad</th>
+                            <th>Precio Unitario</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for articulo in codigo.articulos %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                <input type="text" name="nombre_{{ articulo.id }}"
+                                       class="form-control" value="{{ articulo.nombre }}"
+                                       required>
+                            </td>
+                            <td>
+                                <input type="number" name="cantidad_{{ articulo.id }}"
+                                       class="form-control" value="{{ articulo.cantidad }}"
+                                       min="1" required onchange="calcularSubtotal({{ articulo.id }})">
+                            </td>
+                            <td>
+                                <input type="number" name="precio_{{ articulo.id }}"
+                                       class="form-control" value="{{ "%.2f" | format(articulo.precio) }}"
+                                       step="0.01" min="0" required
+                                       onchange="calcularSubtotal({{ articulo.id }})">
+                            </td>
+                            <td>
+                                <span id="subtotal_{{ articulo.id }}" class="subtotal">
+                                    ${{ "%.2f" | format(articulo.cantidad * articulo.precio) }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <div class="total-section">
+                    <strong>Total del Pedido: <span id="total" class="total-value">${{ "%.2f" | format(total) }}</span></strong>
+                </div>
+
+                <div class="form-actions">
+                    <br>
+                    <button type="submit" class="btn btn-success">Grabar Pedido</button>
+                    <a href="/" class="btn btn-danger">Cancelar</a>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Mostrar loading al buscar
+    document.querySelector('form').addEventListener('submit', function() {
+        document.getElementById('loading').style.display = 'block';
+    });
+
+    // calcular subtotales y total
+    function calcularSubtotal(articuloId) {
+        const cantidad = document.querySelector(`input[name="cantidad_${articuloId}"]`).value;
+        const precio = document.querySelector(`input[name="precio_${articuloId}"]`).value;
+        const subtotal = cantidad * precio;
+
+        document.getElementById(`subtotal_${articuloId}`).textContent =
+            `$${subtotal.toFixed(2)}`;
+
+        calcularTotal();
+    }
+
+    function calcularTotal() {
+        let total = 0;
+        document.querySelectorAll('.subtotal').forEach(function(elemento) {
+            total += parseFloat(elemento.textContent.replace('$', ''));
+        });
+
+        document.getElementById('total').textContent = `$${total.toFixed(2)}`;
+    }
+
+    // Validación del formulario
+    document.getElementById('pedidoForm').addEventListener('submit', function(e) {
+        const inputs = this.querySelectorAll('input[required]');
+        let valid = true;
+
+        inputs.forEach(function(input) {
+            if (!input.value.trim()) {
+                valid = false;
+                input.style.borderColor = '#dc3545';
+            } else {
+                input.style.borderColor = '#ced4da';
+            }
+        });
+
+        if (!valid) {
+            e.preventDefault();
+            alert('Por favor, complete todos los campos requeridos.');
+        }
+    });
+
+    // Animación suave para los campos
+    document.querySelectorAll('.form-control').forEach(function(input) {
+        input.addEventListener('focus', function() {
+            this.parentElement.style.transform = 'scale(1.02)';
+        });
+
+        input.addEventListener('blur', function() {
+            this.parentElement.style.transform = 'scale(1)';
+        });
+    });
+</script>
+
+</div>
+
+{% endblock %}
