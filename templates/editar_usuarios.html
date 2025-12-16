@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Usuario{% endblock %}
+
+{% block content %}
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title mb-0">
+                            <i class="fas fa-user-edit me-2"></i>Editar Usuario
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label for="nombre" class="form-label fw-bold">Nombre Completo</label>
+                                <input type="text" class="form-control form-control-lg" id="nombre"
+                                       name="nombre" value="{{ usuario.nombre }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="usuario" class="form-label fw-bold">Nombre de Usuario (ID)</label>
+                                <input type="text" class="form-control form-control-lg bg-light" id="usuario"
+                                       name="usuario" value="{{ usuario.usuario }}" readonly>
+                                <div class="form-text">El nombre de usuario no se puede modificar.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="clave" class="form-label fw-bold">Contraseña</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control form-control-lg" id="clave"
+                                           name="clave" value="{{ usuario.clave }}" required>
+                                    <button class="btn btn-outline-secondary" type="button"
+                                            onclick="togglePassword('clave')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">La contraseña debe tener al menos 8 caracteres</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="role" class="form-label fw-bold">Rol</label>
+                                <select class="form-select form-select-lg" id="role" name="role" required>
+                                    <option value="admin" {% if usuario.role == 'admin' %}selected{% endif %}>Administrador</option>
+                                    <option value="seller" {% if usuario.role == 'seller' %}selected{% endif %}>Vendedor</option>
+                                    <option value="driver" {% if usuario.role == 'driver' %}selected{% endif %}>Repartidor</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="correo" class="form-label fw-bold">Correo Electrónico</label>
+                                <input type="email" class="form-control form-control-lg" id="correo"
+                                       name="correo" value="{{ usuario.correo }}" required>
+                                <div class="form-text">Ejemplo: usuario@dominio.com</div>
+                            </div>
+
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="{{ url_for('usuarios_index') }}" class="btn btn-lg btn-secondary me-md-2">
+                                    <i class="fas fa-times me-2"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-lg btn-primary">
+                                    <i class="fas fa-save me-2"></i>Actualizar Usuario
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = event.currentTarget.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
+{% endblock %}
